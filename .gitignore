@@ -1,0 +1,33 @@
+# Personal / course material — present in the working tree, not committed
+materials/
+legacy/
+
+# Generated artefacts
+output/
+paraphraser/out/*
+!paraphraser/out/.gitkeep
+paraphraser/examples/baseline/human_id.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# LaTeX build output
+*.aux
+*.log
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# Tooling
+.codegraph/
+.omo/
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
