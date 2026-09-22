@@ -9,6 +9,8 @@ from pathlib import Path
 import torch
 from transformers import AutoModelForMaskedLM, AutoTokenizer
 
+from .tex import is_prose_line
+
 MODEL = "xlm-roberta-base"
 
 
@@ -23,10 +25,8 @@ def prose_lines(path):
             if "\\end{tikzpicture}" in line:
                 in_tikz = False
             continue
-        s = line.strip()
-        if not s or "\\" in line or "&" in line:
-            continue
-        result.append(line)
+        if is_prose_line(line):
+            result.append(line)
     return result
 
 

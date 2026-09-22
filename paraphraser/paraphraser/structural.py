@@ -69,8 +69,17 @@ def _after_connector(sentence: str) -> str:
     return _low(first) + sep + rest
 
 
+LEAD_CONJUNCTIONS = (
+    "dan", "atau", "serta", "tetapi", "tapi", "namun", "melainkan", "sedangkan",
+    "sehingga", "lalu", "karena", "padahal", "sementara", "selain", "kemudian",
+)
+
+
 def _try_connector(sentence: str, rng: random.Random) -> str | None:
     if any(sentence.startswith(c) for c in CONNECTORS):
+        return None
+    first = sentence.split(" ", 1)[0].strip(".,;:()!?").lower()
+    if first in LEAD_CONJUNCTIONS:
         return None
     return rng.choice(CONNECTORS) + _after_connector(sentence)
 

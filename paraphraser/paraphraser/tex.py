@@ -21,22 +21,34 @@ def protect(text: str) -> tuple[str, list[str]]:
 
 
 def restore(text: str, spans: list[str]) -> str:
-    for i, span in enumerate(spans):
-        text = text.replace(chr(0xE000 + i), span)
+    for i in range(len(spans) - 1, -1, -1):
+        text = text.replace(chr(0xE000 + i), spans[i])
     return text
+
+
+STRUCTURAL_PREFIXES = (
+    "\\documentclass", "\\usepackage", "\\begin", "\\end", "\\section", "\\subsection",
+    "\\titleformat", "\\titlespacing", "\\setlength", "\\setlist", "\\hypersetup",
+    "\\usetikzlibrary", "\\pagenumbering", "\\vspace", "\\hspace", "\\centering",
+    "\\node", "\\draw", "\\path", "\\fill", "\\newcommand", "\\renewcommand", "\\label",
+    "\\item[",
+)
 
 
 def is_prose_line(line: str) -> bool:
     stripped = line.strip()
     if not stripped:
         return False
-    if stripped.startswith(("\\", "{")):
+    if stripped.startswith("{"):
         return False
     if "&" in line:
+        return False
+    if stripped.startswith(STRUCTURAL_PREFIXES):
         return False
     plain = re.sub(r"\$[^$]*\$", " ", line)
     plain = re.sub(r"``.*?''", " ", plain)
     plain = re.sub(r"\\[A-Za-z]+\*?(?:\{[^{}]*\})*", " ", plain)
+    plain = re.sub(r"[{}]", " ", plain)
     return len(re.findall(r"[^\W\d_]+", plain, re.UNICODE)) >= 5
 
 
