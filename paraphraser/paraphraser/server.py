@@ -39,8 +39,21 @@ class ParaphraserHandler(BaseHTTPRequestHandler):
     ranker: Ranker | None = None
 
     def log_message(self, format: str, *args) -> None:
-        """Suppress noisy access logging in standard console output."""
-        sys.stderr.write(f"[server] {args[0]} - {args[1]}\n")
+        """Route access logs to stdout (info) and errors to stderr to avoid red false-alarm terminal highlights."""
+        status_str = str(args[1]) if len(args) > 1 else ""
+        req_str = str(args[0]) if len(args) > 0 else ""
+        msg = f"[server] {req_str} -> {status_str}\n"
+        try:
+            code = int(status_str)
+        except ValueError:
+            code = 200
+
+        if code >= 400:
+            sys.stderr.write(msg)
+            sys.stderr.flush()
+        else:
+            sys.stdout.write(msg)
+            sys.stdout.flush()
 
     def _send_cors_headers(self) -> None:
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -64,6 +77,12 @@ class ParaphraserHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
+
+        if path == "/favicon.ico":
+            self.send_response(HTTPStatus.NO_CONTENT)
+            self._send_cors_headers()
+            self.end_headers()
+            return
 
         if path in ("", "/", "/index.html", "/app.html"):
             app_file = find_app_html()
