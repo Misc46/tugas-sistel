@@ -166,6 +166,9 @@ class ParaphraserHandler(BaseHTTPRequestHandler):
                     seed = random.randint(1, 999999)
 
             is_tex = bool(payload.get("is_tex", True))
+            mode = str(payload.get("mode", "dynamic")).lower()
+            if mode not in ("conservative", "dynamic", "aggressive"):
+                mode = "dynamic"
 
             ranker = self.ranker or getattr(self.server, "ranker", None)
             if ranker is None:
@@ -195,6 +198,7 @@ class ParaphraserHandler(BaseHTTPRequestHandler):
                 novelty=novelty,
                 lang=lang,
                 is_tex=is_tex,
+                mode=mode,
             )
             after_metrics = compute_text_metrics(paraphrased)
 

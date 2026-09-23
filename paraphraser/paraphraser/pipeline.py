@@ -19,11 +19,12 @@ def paraphrase_paragraph(
     stats: dict,
     novelty: int = 3,
     lang: str = "id",
+    mode: str = "dynamic",
 ) -> str:
     masked, spans = protect(paragraph)
     sentences = split_sentences(masked)
-    sentences = [replace_words(s, rng, ranker, density, stats, novelty, lang=lang) for s in sentences]
-    sentences = structural_pass(sentences, rng, stats, lang=lang)
+    sentences = [replace_words(s, rng, ranker, density, stats, novelty, lang=lang, mode=mode) for s in sentences]
+    sentences = structural_pass(sentences, rng, stats, lang=lang, mode=mode)
     return restore(" ".join(sentences), spans)
 
 
@@ -36,6 +37,7 @@ def paraphrase_text(
     novelty: int = 3,
     lang: str = "id",
     is_tex: bool = True,
+    mode: str = "dynamic",
 ) -> tuple[str, dict, list[dict]]:
     """Paraphrase raw string (either LaTeX document or plain multi-line prose)."""
     lines = text.split("\n")
@@ -62,7 +64,7 @@ def paraphrase_text(
             continue
 
         stats["prose_lines"] += 1
-        new_line = paraphrase_paragraph(line, rng, ranker, density, stats, novelty, lang=lang)
+        new_line = paraphrase_paragraph(line, rng, ranker, density, stats, novelty, lang=lang, mode=mode)
         changed = (new_line != line)
         if changed:
             stats["changed_lines"] += 1

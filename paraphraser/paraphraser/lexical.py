@@ -18,17 +18,25 @@ def replace_words(
     stats: dict,
     novelty: int = 3,
     lang: str = "id",
+    mode: str = "dynamic",
 ) -> str:
     tokens = sentence.split(" ")
     out: list[str] = []
     replaced_here = 0
+
+    if mode == "conservative":
+        cap = 3
+    elif mode == "dynamic":
+        cap = max(6, len(tokens) // 2)
+    else:  # aggressive
+        cap = len(tokens)
 
     synonyms_map = get_synonyms(lang)
     blacklist = get_blacklist(lang)
     min_len = 4 if lang.lower() == "id" else 3
 
     for index, token in enumerate(tokens):
-        if "\ue000" in token or replaced_here >= 3:
+        if "\ue000" in token or replaced_here >= cap:
             out.append(token)
             continue
         m = MASK_PLACEHOLDER_RE.match(token)

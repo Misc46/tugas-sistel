@@ -462,6 +462,28 @@
       margin-top: 0.5rem;
     }
 
+    .intensity-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .intensity-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
     /* Advanced Settings Accordion */
     .accordion {
       margin-top: 1rem;
@@ -903,8 +925,8 @@
           <div class="step-text">Select <strong>English (EN)</strong> or <strong>Indonesian (ID)</strong> to match your source prose.</div>
         </div>
         <div class="step-card">
-          <div class="step-number">Step 3 — Humanize</div>
-          <div class="step-text">Click <strong>Paraphrase</strong>. Sentence rhythms are restructured and vetted synonyms are applied.</div>
+          <div class="step-number">Step 3 — Intensity & Humanize</div>
+          <div class="step-text">Choose <strong>Dynamic</strong> or <strong>Aggressive</strong> intensity, then click <strong>Paraphrase</strong> to restructure clauses & burstiness.</div>
         </div>
         <div class="step-card">
           <div class="step-number">Step 4 — Review</div>
@@ -950,6 +972,21 @@
               <button class="segmented-btn active" id="modeTextBtn" onclick="setInputMode('text')">Instant Text</button>
               <button class="segmented-btn" id="modeFileBtn" onclick="setInputMode('file')">Upload .tex</button>
             </div>
+          </div>
+        </div>
+
+        <!-- Rewrite Intensity / Scrambling Mode Selector -->
+        <div class="intensity-bar">
+          <div class="intensity-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+            </svg>
+            Rewrite Intensity:
+          </div>
+          <div class="segmented-control" title="Scrambling & restructuring intensity level">
+            <button class="segmented-btn" id="modeConservativeBtn" onclick="setRewriteMode('conservative')" title="Minimal changes, preserve clauses">Conservative</button>
+            <button class="segmented-btn active" id="modeDynamicBtn" onclick="setRewriteMode('dynamic')" title="Clause splitting, inversion & balanced synonyms">Dynamic (Recommended)</button>
+            <button class="segmented-btn" id="modeAggressiveBtn" onclick="setRewriteMode('aggressive')" title="Maximum clause restructuring, heavy inversions & deep synonym substitution">Aggressive (Heavy)</button>
           </div>
         </div>
 
@@ -1016,9 +1053,9 @@
             <div class="setting-group">
               <div class="setting-label">
                 <span>Substitution Density</span>
-                <span id="densityVal" style="font-family: var(--font-mono); font-weight: 600;">0.35</span>
+                <span id="densityVal" style="font-family: var(--font-mono); font-weight: 600;">0.50</span>
               </div>
-              <input type="range" class="setting-slider" id="densitySlider" min="0.10" max="0.70" step="0.05" value="0.35" oninput="document.getElementById('densityVal').textContent = this.value">
+              <input type="range" class="setting-slider" id="densitySlider" min="0.10" max="0.85" step="0.05" value="0.50" oninput="document.getElementById('densityVal').textContent = this.value">
               <span style="font-size: 0.7rem; color: var(--text-muted);">Fraction of eligible words substituted</span>
             </div>
 
@@ -1154,6 +1191,7 @@
           <!-- Operation Stats Chips -->
           <div class="stats-chips" id="statsChips" style="display: none;">
             <span class="chip" id="chipReplacements">Swaps: <strong>0</strong></span>
+            <span class="chip" id="chipInversions">Inversions: <strong>0</strong></span>
             <span class="chip" id="chipSplits">Splits: <strong>0</strong></span>
             <span class="chip" id="chipMerges">Merges: <strong>0</strong></span>
             <span class="chip" id="chipConnectors">Connectors: <strong>0</strong></span>
@@ -1201,6 +1239,7 @@
     const state = {
       lang: 'en',
       inputMode: 'text',
+      rewriteMode: 'dynamic',
       outputView: 'diff',
       paraphrasedResult: '',
       originalText: '',
@@ -1255,6 +1294,26 @@
       document.getElementById('langEnBtn').classList.toggle('active', lang === 'en');
       document.getElementById('langIdBtn').classList.toggle('active', lang === 'id');
       showToast(`Language set to ${lang.toUpperCase()}`, 'info');
+    }
+
+    // Rewrite Intensity Mode Toggle
+    function setRewriteMode(mode) {
+      state.rewriteMode = mode;
+      document.getElementById('modeConservativeBtn').classList.toggle('active', mode === 'conservative');
+      document.getElementById('modeDynamicBtn').classList.toggle('active', mode === 'dynamic');
+      document.getElementById('modeAggressiveBtn').classList.toggle('active', mode === 'aggressive');
+
+      const slider = document.getElementById('densitySlider');
+      const valSpan = document.getElementById('densityVal');
+      if (mode === 'conservative') {
+        slider.value = 0.35;
+      } else if (mode === 'dynamic') {
+        slider.value = 0.50;
+      } else if (mode === 'aggressive') {
+        slider.value = 0.70;
+      }
+      valSpan.textContent = slider.value;
+      showToast(`Rewrite intensity: ${mode.toUpperCase()}`, 'info');
     }
 
     // Input Mode
@@ -1433,6 +1492,7 @@
       const payload = {
         text: text,
         lang: state.lang,
+        mode: state.rewriteMode,
         density: density,
         novelty: novelty,
         seed: seed,
@@ -1500,6 +1560,7 @@
       const statsChips = document.getElementById('statsChips');
       statsChips.style.display = 'flex';
       document.getElementById('chipReplacements').innerHTML = `Swaps: <strong>${data.stats.replacements || 0}</strong>`;
+      document.getElementById('chipInversions').innerHTML = `Inversions: <strong>${data.stats.inversions || 0}</strong>`;
       document.getElementById('chipSplits').innerHTML = `Splits: <strong>${data.stats.splits || 0}</strong>`;
       document.getElementById('chipMerges').innerHTML = `Merges: <strong>${data.stats.merges || 0}</strong>`;
       document.getElementById('chipConnectors').innerHTML = `Connectors: <strong>${data.stats.connectors || 0}</strong>`;
