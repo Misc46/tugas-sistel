@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paraphraser — Academic & Prose Humanizer (EN / ID)</title>
+  <meta name="description" content="General-purpose bilingual paraphraser and sentence-burstiness humanizer for LaTeX and plain text.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0d14;
+      --bg-secondary: #111622;
+      --bg-tertiary: #182032;
+      --bg-card: rgba(17, 24, 39, 0.75);
+      --bg-card-hover: rgba(24, 32, 50, 0.85);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-focus: #6366f1;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-indigo: #6366f1;
+      --accent-indigo-hover: #4f46e5;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-rose: #f43f5e;
+      --accent-amber: #f59e0b;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+      --shadow-glow: 0 0 25px -5px rgba(99, 102, 241, 0.35);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+      --transition-fast: 150ms ease;
+      --transition-normal: 250ms ease;
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f5f9;
+      --bg-card: rgba(255, 255, 255, 0.85);
+      --bg-card-hover: #ffffff;
+      --border-color: rgba(0, 0, 0, 0.09);
+      --border-focus: #4f46e5;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+      --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+      --shadow-glow: 0 0 20px -3px rgba(99, 102, 241, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      transition: background-color var(--transition-normal), color var(--transition-normal);
+      background-image: 
+        radial-gradient(circle at 15% 10%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 20%, rgba(6, 182, 212, 0.07) 0%, transparent 35%);
+      background-attachment: fixed;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem;
+      width: 100%;
+      flex: 1;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 0 1.75rem 0;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 1.5rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--accent-indigo), var(--accent-cyan));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .brand-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .brand-text h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .brand-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.15rem 0.5rem;
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--accent-indigo);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: var(--radius-full);
+    }
+
+    .brand-text p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 0.35rem 0.85rem;
+      border-radius: var(--radius-full);
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--accent-amber);
+    }
+
+    .status-dot.online {
+      background-color: var(--accent-emerald);
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+    }
+
+    .theme-toggle, .btn-icon {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      cursor: pointer;
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition-fast);
+    }
+
+    .theme-toggle:hover, .btn-icon:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Banners */
+    .banner {
+      border-radius: var(--radius-md);
+      padding: 0.875rem 1.25rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.85rem;
+      font-size: 0.85rem;
+      border: 1px solid transparent;
+      backdrop-filter: blur(8px);
+    }
+
+    .banner-info {
+      background: rgba(6, 182, 212, 0.08);
+      border-color: rgba(6, 182, 212, 0.25);
+      color: var(--text-secondary);
+    }
+
+    .banner-info svg {
+      color: var(--accent-cyan);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .banner-quickstart {
+      background: rgba(99, 102, 241, 0.08);
+      border-color: rgba(99, 102, 241, 0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .quickstart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .quickstart-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      color: var(--accent-indigo);
+    }
+
+    .quickstart-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.85rem;
+      margin-top: 0.5rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid rgba(99, 102, 241, 0.15);
+    }
+
+    .step-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.65rem 0.85rem;
+    }
+
+    .step-number {
+      font-weight: 700;
+      color: var(--accent-cyan);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      margin-bottom: 0.2rem;
+    }
+
+    .step-text {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    /* Main Workspace Layout */
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 1024px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Panels */
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-md);
+      backdrop-filter: blur(12px);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .panel-title {
+      font-size: 1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Controls & Switchers */
+    .segmented-control {
+      display: flex;
+      background: var(--bg-tertiary);
+      padding: 0.25rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+
+    .segmented-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.35rem 0.85rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .segmented-btn.active {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Text Area */
+    .input-wrapper {
+      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 380px;
+    }
+
+    textarea.editor {
+      width: 100%;
+      flex: 1;
+      min-height: 340px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 0.925rem;
+      line-height: 1.6;
+      resize: vertical;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    textarea.editor.mono {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+    }
+
+    textarea.editor:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+    }
+
+    .editor-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .sample-prompts {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .sample-btn {
+      background: none;
+      border: 1px solid var(--border-color);
+      color: var(--accent-indigo);
+      border-radius: var(--radius-sm);
+      padding: 0.15rem 0.5rem;
+      font-size: 0.72rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .sample-btn:hover {
+      background: rgba(99, 102, 241, 0.12);
+      border-color: var(--accent-indigo);
+    }
+
+    /* File Drop Zone */
+    .dropzone {
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition-normal);
+      background: var(--bg-secondary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--accent-indigo);
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    .dropzone-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--bg-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-indigo);
+    }
+
+    .file-loaded-info {
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.5rem;
+    }
+
+    /* Advanced Settings Accordion */
+    .accordion {
+      margin-top: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      background: var(--bg-secondary);
+      overflow: hidden;
+    }
+
+    .accordion-header {
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      user-select: none;
+    }
+
+    .accordion-header:hover {
+      color: var(--text-primary);
+    }
+
+    .accordion-body {
+      padding: 1rem;
+      border-top: 1px solid var(--border-color);
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .accordion.open .accordion-body {
+      display: grid;
+    }
+
+    .setting-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .setting-label {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .setting-slider {
+      width: 100%;
+      accent-color: var(--accent-indigo);
+      cursor: pointer;
+    }
+
+    .setting-input {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.4rem 0.6rem;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+
+    /* Actions Bar */
+    .actions-bar {
+      margin-top: 1rem;
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .btn-primary {
+      flex: 1;
+      background: linear-gradient(135deg, var(--accent-indigo), #4f46e5);
+      border: none;
+      color: white;
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 0.85rem 1.5rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      box-shadow: var(--shadow-glow);
+      transition: all var(--transition-fast);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      filter: none;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all var(--transition-fast);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-tertiary);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Output Section */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .metric-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 0.85rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .metric-title {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+    }
+
+    .metric-value-row {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+    }
+
+    .metric-value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--text-primary);
+    }
+
+    .metric-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.1rem 0.4rem;
+      border-radius: var(--radius-full);
+    }
+
+    .badge-gain {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-neutral {
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--text-muted);
+    }
+
+    .metric-sub {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    /* Output Viewer */
+    .output-viewer {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .view-content {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      flex: 1;
+      min-height: 340px;
+      overflow-y: auto;
+      max-height: 520px;
+      padding: 1rem;
+      font-size: 0.925rem;
+      line-height: 1.7;
+    }
+
+    .diff-line {
+      padding: 0.5rem 0.65rem;
+      border-radius: var(--radius-sm);
+      margin-bottom: 0.4rem;
+      border-left: 3px solid transparent;
+      font-size: 0.88rem;
+    }
+
+    .diff-line.changed {
+      background: rgba(99, 102, 241, 0.08);
+      border-left-color: var(--accent-indigo);
+    }
+
+    .diff-orig {
+      color: var(--text-muted);
+      text-decoration: line-through;
+      margin-bottom: 0.2rem;
+      font-size: 0.82rem;
+    }
+
+    .diff-para {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .side-by-side-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      height: 100%;
+    }
+
+    .side-col {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    .side-col-header {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.35rem;
+    }
+
+    .empty-state {
+      height: 100%;
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      text-align: center;
+      gap: 0.75rem;
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      opacity: 0.4;
+    }
+
+    /* Output actions */
+    .output-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      justify-content: flex-end;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      z-index: 1000;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all var(--transition-normal);
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .toast.success {
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+
+    .toast.error {
+      border-color: rgba(244, 63, 94, 0.4);
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Stats chip pills */
+    .stats-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.6rem;
+    }
+
+    .chip {
+      font-size: 0.7rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-full);
+      color: var(--text-secondary);
+    }
+
+    .chip strong {
+      color: var(--accent-indigo);
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 1.5rem 0;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: auto;
+    }
+
+    footer a {
+      color: var(--accent-indigo);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <a href="#" class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>Paraphraser <span class="brand-badge">Bilingual EN / ID</span></h1>
+          <p>Academic & Prose Burstiness Optimizer for LaTeX & Text</p>
+        </div>
+      </a>
+
+      <div class="header-actions">
+        <div class="status-badge" id="statusBadge" title="Server engine status">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">Connecting...</span>
+        </div>
+
+        <button class="theme-toggle" id="themeToggle" title="Toggle Light/Dark Theme">
+          <svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Quickstart Guide (Collapsible) -->
+    <div class="banner banner-quickstart">
+      <div class="quickstart-header" id="quickstartToggle">
+        <div class="quickstart-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polygon points="10 8 16 12 10 16 10 8"></polygon>
+          </svg>
+          Quickstart Guide: How to humanize prose with burstiness
+        </div>
+        <svg id="quickstartArrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </div>
+      <div class="quickstart-steps" id="quickstartSteps" style="display: none;">
+        <div class="step-card">
+          <div class="step-number">Step 1 — Input</div>
+          <div class="step-text">Paste paragraphs directly into the editor or upload an existing <code>.tex</code> manuscript.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">Step 2 — Engine</div>
+          <div class="step-text">Select <strong>English (EN)</strong> or <strong>Indonesian (ID)</strong> to match your source prose.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">Step 3 — Humanize</div>
+          <div class="step-text">Click <strong>Paraphrase</strong>. Sentence rhythms are restructured and vetted synonyms are applied.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">Step 4 — Review</div>
+          <div class="step-text">Compare burstiness CV before/after, inspect the diff viewer, and copy or download.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Detector Disclaimer Banner -->
+    <div class="banner banner-info">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+      </svg>
+      <div>
+        <strong>Detector Calibration Note:</strong> Commercial AI detectors evaluate statistical text uniformity (burstiness and perplexity). This tool increases sentence-length variation and discourse dynamism while strictly protecting technical vocabulary, LaTeX formulas ($math$), and commands. No detector score is definitive.
+      </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <div class="workspace">
+      <!-- Input Column -->
+      <section class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            Source Document
+          </div>
+
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <!-- Language Engine Selector -->
+            <div class="segmented-control" title="Select text language engine">
+              <button class="segmented-btn active" id="langEnBtn" onclick="setLanguage('en')">EN</button>
+              <button class="segmented-btn" id="langIdBtn" onclick="setLanguage('id')">ID</button>
+            </div>
+
+            <!-- Mode Switcher -->
+            <div class="segmented-control">
+              <button class="segmented-btn active" id="modeTextBtn" onclick="setInputMode('text')">Instant Text</button>
+              <button class="segmented-btn" id="modeFileBtn" onclick="setInputMode('file')">Upload .tex</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- File Upload Area (Hidden by default) -->
+        <div id="fileUploadContainer" style="display: none;">
+          <div class="dropzone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+            <div class="dropzone-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </div>
+            <div>
+              <p style="font-weight: 600; font-size: 0.9rem;">Click or drag & drop your .tex file here</p>
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">Supports full LaTeX documents (.tex)</p>
+            </div>
+            <input type="file" id="fileInput" accept=".tex,.txt" style="display: none;" onchange="handleFileSelect(event)">
+          </div>
+          <div id="loadedFileInfo" class="file-loaded-info" style="display: none;">
+            <span id="loadedFileName">filename.tex</span>
+            <span id="loadedFileSize" style="color: var(--text-muted);">0 KB</span>
+          </div>
+        </div>
+
+        <!-- Text Editor Area -->
+        <div class="input-wrapper" id="textInputContainer">
+          <textarea 
+            class="editor" 
+            id="sourceText" 
+            placeholder="Type or paste academic prose or LaTeX content here..."
+            spellcheck="false"
+            oninput="updateInputCounts()"
+          ></textarea>
+          
+          <div class="editor-footer">
+            <div class="sample-prompts">
+              <span>Samples:</span>
+              <button class="sample-btn" onclick="loadSample('en')">English</button>
+              <button class="sample-btn" onclick="loadSample('id')">Indonesian (Sistel)</button>
+              <button class="sample-btn" onclick="clearInput()">Clear</button>
+            </div>
+            <div>
+              <span id="charCount">0</span> chars • <span id="wordCount">0</span> words
+            </div>
+          </div>
+        </div>
+
+        <!-- Advanced Parameter Settings -->
+        <div class="accordion" id="settingsAccordion">
+          <div class="accordion-header" onclick="toggleAccordion('settingsAccordion')">
+            <span style="display: flex; align-items: center; gap: 0.5rem;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+              Advanced Tuning (Density, Novelty & Seed)
+            </span>
+            <svg class="accordion-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+          <div class="accordion-body">
+            <div class="setting-group">
+              <div class="setting-label">
+                <span>Substitution Density</span>
+                <span id="densityVal" style="font-family: var(--font-mono); font-weight: 600;">0.35</span>
+              </div>
+              <input type="range" class="setting-slider" id="densitySlider" min="0.10" max="0.70" step="0.05" value="0.35" oninput="document.getElementById('densityVal').textContent = this.value">
+              <span style="font-size: 0.7rem; color: var(--text-muted);">Fraction of eligible words substituted</span>
+            </div>
+
+            <div class="setting-group">
+              <div class="setting-label">
+                <span>LM Novelty Rank</span>
+                <span id="noveltyVal" style="font-family: var(--font-mono); font-weight: 600;">3</span>
+              </div>
+              <input type="range" class="setting-slider" id="noveltySlider" min="1" max="5" step="1" value="3" oninput="document.getElementById('noveltyVal').textContent = this.value">
+              <span style="font-size: 0.7rem; color: var(--text-muted);">1 = always top candidate, 3 = balanced human sampling</span>
+            </div>
+
+            <div class="setting-group">
+              <div class="setting-label">
+                <span>RNG Seed</span>
+                <a href="#" style="font-size: 0.72rem; color: var(--accent-indigo); text-decoration: none;" onclick="randomizeSeed(event)">Randomize</a>
+              </div>
+              <input type="number" class="setting-input" id="seedInput" value="42" placeholder="Random seed">
+            </div>
+
+            <div class="setting-group">
+              <div class="setting-label">
+                <span>LaTeX Guard Checks</span>
+              </div>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; cursor: pointer; margin-top: 0.25rem;">
+                <input type="checkbox" id="texGuardCheck" checked style="accent-color: var(--accent-indigo);">
+                Protect $math$, \cmd, and quotes
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="actions-bar">
+          <button class="btn-primary" id="paraphraseBtn" onclick="runParaphrase()">
+            <span id="btnSpinner" class="spinner" style="display: none;"></span>
+            <svg id="btnIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.83 6.72 2.24"></path>
+              <polyline points="21 3 21 9 15 9"></polyline>
+            </svg>
+            <span id="btnText">Paraphrase Prose</span>
+            <span style="font-size: 0.7rem; opacity: 0.7; font-weight: 400; margin-left: 0.25rem;">(Ctrl+Enter)</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Output Column -->
+      <section class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+            Humanized Output & Metrics
+          </div>
+
+          <div class="segmented-control">
+            <button class="segmented-btn active" id="viewDiffBtn" onclick="setOutputView('diff')">Annotated Diff</button>
+            <button class="segmented-btn" id="viewSideBtn" onclick="setOutputView('side')">Side-by-Side</button>
+            <button class="segmented-btn" id="viewPlainBtn" onclick="setOutputView('plain')">Clean Text</button>
+          </div>
+        </div>
+
+        <!-- Live Metrics Cards -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span class="metric-title">Burstiness (CV)</span>
+            <div class="metric-value-row">
+              <span class="metric-value" id="burstScore">—</span>
+              <span class="metric-badge badge-neutral" id="burstBadge">—</span>
+            </div>
+            <span class="metric-sub" id="burstSub">target: ≥ 0.50</span>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-title">Sentence Variance</span>
+            <div class="metric-value-row">
+              <span class="metric-value" id="varScore">—</span>
+            </div>
+            <span class="metric-sub" id="varSub">std dev of lengths</span>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-title">Avg Sentence Len</span>
+            <div class="metric-value-row">
+              <span class="metric-value" id="meanLenScore">—</span>
+            </div>
+            <span class="metric-sub">words / sentence</span>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-title">Sentences & Words</span>
+            <div class="metric-value-row">
+              <span class="metric-value" id="countsScore">—</span>
+            </div>
+            <span class="metric-sub" id="countsSub">prose lines evaluated</span>
+          </div>
+        </div>
+
+        <!-- Output View Container -->
+        <div class="output-viewer">
+          <!-- Diff Annotated View -->
+          <div class="view-content" id="diffView">
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M16 12l-4-4-4 4M12 8v8"></path>
+              </svg>
+              <p>Your paraphrased text and burstiness metrics will appear here.</p>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Paste your text and click <strong>Paraphrase Prose</strong> to begin.</span>
+            </div>
+          </div>
+
+          <!-- Side by Side View (Hidden by default) -->
+          <div class="view-content" id="sideView" style="display: none;">
+            <div class="side-by-side-grid">
+              <div class="side-col">
+                <div class="side-col-header">Original</div>
+                <div id="sideOriginal"></div>
+              </div>
+              <div class="side-col">
+                <div class="side-col-header">Paraphrased</div>
+                <div id="sideParaphrased"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Clean Text View (Hidden by default) -->
+          <div class="view-content" id="plainView" style="display: none;">
+            <textarea class="editor" id="plainOutputArea" readonly spellcheck="false"></textarea>
+          </div>
+
+          <!-- Operation Stats Chips -->
+          <div class="stats-chips" id="statsChips" style="display: none;">
+            <span class="chip" id="chipReplacements">Swaps: <strong>0</strong></span>
+            <span class="chip" id="chipSplits">Splits: <strong>0</strong></span>
+            <span class="chip" id="chipMerges">Merges: <strong>0</strong></span>
+            <span class="chip" id="chipConnectors">Connectors: <strong>0</strong></span>
+            <span class="chip" id="chipOpeners">Openers: <strong>0</strong></span>
+          </div>
+        </div>
+
+        <!-- Export Actions -->
+        <div class="output-actions">
+          <button class="btn-secondary" id="copyBtn" onclick="copyResult()">
+            <svg id="copyIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span id="copyText">Copy to Clipboard</span>
+          </button>
+          
+          <button class="btn-secondary" id="downloadBtn" onclick="downloadResult()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Download File</span>
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      Paraphraser & Humanizer Engine • English & Indonesian Academic NLP Pipeline • 
+      <a href="https://github.com" target="_blank" rel="noreferrer">Local Execution (Privacy Preserving)</a>
+    </footer>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast">
+    <span id="toastIcon"></span>
+    <span id="toastMsg"></span>
+  </div>
+
+  <script>
+    // State
+    const state = {
+      lang: 'en',
+      inputMode: 'text',
+      outputView: 'diff',
+      paraphrasedResult: '',
+      originalText: '',
+      currentFilename: 'paraphrased.txt',
+      serverAvailable: false,
+      apiBase: window.location.origin.startsWith('http') ? window.location.origin : 'http://127.0.0.1:8000'
+    };
+
+    // Samples
+    const SAMPLES = {
+      en: `This paper discusses modern computer network architectures and examines the primary functions of each protocol layer. The transmission of data requires precise synchronization between endpoints, while packet routing determines optimal paths across interconnected gateways. Consequently, understanding transport layer mechanisms is crucial for ensuring reliable communication, whereas physical constraints dictate maximum bandwidth limits across different transmission mediums.`,
+      id: `Model OSI membahas tujuh layer yang saling terhubung untuk mengatur pengiriman data. Pada layer transport, protokol TCP punya tugas penting untuk memastikan paket data sampai ke tujuan dengan aman. Lapisan physical menerjemahkan bit-bit data menjadi sinyal listrik atau cahaya, sehingga informasi dapat melewati media transmisi kabel fiber optic dengan cepat dan andal.`
+    };
+
+    // Initialization
+    document.addEventListener('DOMContentLoaded', () => {
+      checkServerHealth();
+      initKeyboardShortcuts();
+      initDragAndDrop();
+      updateInputCounts();
+
+      // Check URL parameters if opened from server
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('lang')) {
+        setLanguage(params.get('lang'));
+      }
+    });
+
+    // Server Health Check
+    async function checkServerHealth() {
+      const dot = document.getElementById('statusDot');
+      const text = document.getElementById('statusText');
+      try {
+        const res = await fetch(`${state.apiBase}/api/health`, { signal: AbortSignal.timeout(3000) });
+        if (res.ok) {
+          const data = await res.json();
+          state.serverAvailable = true;
+          dot.classList.add('online');
+          text.textContent = data.lm_available ? `Engine: ${data.model}` : 'Engine: Python Rule-Based (Ready)';
+          return;
+        }
+      } catch (e) {
+        // Fallback or retry
+      }
+      dot.classList.remove('online');
+      text.textContent = 'Server Disconnected (Run python server.py)';
+    }
+
+    // Language Toggle
+    function setLanguage(lang) {
+      state.lang = lang;
+      document.getElementById('langEnBtn').classList.toggle('active', lang === 'en');
+      document.getElementById('langIdBtn').classList.toggle('active', lang === 'id');
+      showToast(`Language set to ${lang.toUpperCase()}`, 'info');
+    }
+
+    // Input Mode
+    function setInputMode(mode) {
+      state.inputMode = mode;
+      document.getElementById('modeTextBtn').classList.toggle('active', mode === 'text');
+      document.getElementById('modeFileBtn').classList.toggle('active', mode === 'file');
+      document.getElementById('textInputContainer').style.display = mode === 'text' ? 'flex' : 'none';
+      document.getElementById('fileUploadContainer').style.display = mode === 'file' ? 'block' : 'none';
+    }
+
+    // Output View Switcher
+    function setOutputView(view) {
+      state.outputView = view;
+      document.getElementById('viewDiffBtn').classList.toggle('active', view === 'diff');
+      document.getElementById('viewSideBtn').classList.toggle('active', view === 'side');
+      document.getElementById('viewPlainBtn').classList.toggle('active', view === 'plain');
+
+      document.getElementById('diffView').style.display = view === 'diff' ? 'block' : 'none';
+      document.getElementById('sideView').style.display = view === 'side' ? 'block' : 'none';
+      document.getElementById('plainView').style.display = view === 'plain' ? 'block' : 'none';
+    }
+
+    // Quickstart Accordion
+    document.getElementById('quickstartToggle').addEventListener('click', () => {
+      const steps = document.getElementById('quickstartSteps');
+      const arrow = document.getElementById('quickstartArrow');
+      const isHidden = steps.style.display === 'none';
+      steps.style.display = isHidden ? 'grid' : 'none';
+      arrow.style.transform = isHidden ? 'rotate(180deg)' : 'none';
+    });
+
+    // Accordions
+    function toggleAccordion(id) {
+      const el = document.getElementById(id);
+      el.classList.toggle('open');
+    }
+
+    // Theme Toggle
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const target = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', target);
+      localStorage.setItem('theme', target);
+    });
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+
+    // Word / Char count updater
+    function updateInputCounts() {
+      const text = document.getElementById('sourceText').value;
+      document.getElementById('charCount').textContent = text.length.toLocaleString();
+      const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+      document.getElementById('wordCount').textContent = words.toLocaleString();
+    }
+
+    // Sample Loader
+    function loadSample(lang) {
+      setLanguage(lang);
+      const text = SAMPLES[lang] || '';
+      document.getElementById('sourceText').value = text;
+      updateInputCounts();
+      state.currentFilename = lang === 'id' ? 'sinopsis-OSI-TCPIP.tex' : 'academic_sample.tex';
+      showToast(`Loaded ${lang.toUpperCase()} sample`, 'success');
+    }
+
+    function clearInput() {
+      document.getElementById('sourceText').value = '';
+      updateInputCounts();
+      document.getElementById('loadedFileInfo').style.display = 'none';
+    }
+
+    function randomizeSeed(e) {
+      e.preventDefault();
+      const randomSeed = Math.floor(Math.random() * 900000) + 10000;
+      document.getElementById('seedInput').value = randomSeed;
+      showToast(`Random seed: ${randomSeed}`, 'info');
+    }
+
+    // Drag & Drop
+    function initDragAndDrop() {
+      const dropZone = document.getElementById('dropZone');
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          dropZone.classList.add('dragover');
+        }, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          dropZone.classList.remove('dragover');
+        }, false);
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length > 0) {
+          loadFile(files[0]);
+        }
+      });
+    }
+
+    function handleFileSelect(e) {
+      if (e.target.files.length > 0) {
+        loadFile(e.target.files[0]);
+      }
+    }
+
+    function loadFile(file) {
+      state.currentFilename = file.name;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target.result;
+        document.getElementById('sourceText').value = content;
+        updateInputCounts();
+        document.getElementById('loadedFileName').textContent = file.name;
+        document.getElementById('loadedFileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
+        document.getElementById('loadedFileInfo').style.display = 'flex';
+        showToast(`Loaded file: ${file.name}`, 'success');
+      };
+      reader.readAsText(file);
+    }
+
+    // Keyboard shortcut (Ctrl+Enter / Cmd+Enter)
+    function initKeyboardShortcuts() {
+      document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          runParaphrase();
+        }
+      });
+    }
+
+    // Toast Notification
+    function showToast(msg, type = 'info') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMsg');
+      toast.className = `toast show ${type}`;
+      toastMsg.textContent = msg;
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => {
+        toast.className = 'toast';
+      }, 3000);
+    }
+
+    // Paraphrase Execution
+    async function runParaphrase() {
+      const text = document.getElementById('sourceText').value.trim();
+      if (!text) {
+        showToast('Please insert or paste text to paraphrase.', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('paraphraseBtn');
+      const spinner = document.getElementById('btnSpinner');
+      const icon = document.getElementById('btnIcon');
+      const btnText = document.getElementById('btnText');
+
+      btn.disabled = true;
+      spinner.style.display = 'inline-block';
+      icon.style.display = 'none';
+      btnText.textContent = 'Processing...';
+
+      const density = parseFloat(document.getElementById('densitySlider').value);
+      const novelty = parseInt(document.getElementById('noveltySlider').value, 10);
+      const seed = parseInt(document.getElementById('seedInput').value, 10) || null;
+      const isTex = document.getElementById('texGuardCheck').checked;
+
+      const payload = {
+        text: text,
+        lang: state.lang,
+        density: density,
+        novelty: novelty,
+        seed: seed,
+        is_tex: isTex
+      };
+
+      try {
+        const response = await fetch(`${state.apiBase}/api/paraphrase`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.error || `Server returned error ${response.status}`);
+        }
+
+        const data = await response.json();
+        renderResults(data, text);
+        showToast('Paraphrase completed successfully!', 'success');
+      } catch (err) {
+        console.error(err);
+        showToast(`Failed: ${err.message}. Make sure server is running with 'python server.py'`, 'error');
+      } finally {
+        btn.disabled = false;
+        spinner.style.display = 'none';
+        icon.style.display = 'inline-block';
+        btnText.textContent = 'Paraphrase Prose';
+      }
+    }
+
+    // Render Results & Metrics
+    function renderResults(data, originalText) {
+      state.originalText = originalText;
+      state.paraphrasedResult = data.paraphrased || '';
+
+      // Update Metrics Cards
+      const before = data.metrics.before;
+      const after = data.metrics.after;
+      const pct = data.metrics.improvement_pct;
+
+      const burstScore = document.getElementById('burstScore');
+      burstScore.textContent = after.burstiness.toFixed(3);
+
+      const burstBadge = document.getElementById('burstBadge');
+      if (pct > 0) {
+        burstBadge.className = 'metric-badge badge-gain';
+        burstBadge.textContent = `+${pct}%`;
+      } else {
+        burstBadge.className = 'metric-badge badge-neutral';
+        burstBadge.textContent = `${pct}%`;
+      }
+      document.getElementById('burstSub').textContent = `prior: ${before.burstiness.toFixed(3)}`;
+
+      document.getElementById('varScore').textContent = after.std_dev.toFixed(2);
+      document.getElementById('varSub').textContent = `prior: ${before.std_dev.toFixed(2)}`;
+
+      document.getElementById('meanLenScore').textContent = after.mean_length.toFixed(1);
+
+      document.getElementById('countsScore').textContent = `${after.sentences} s / ${after.words} w`;
+      document.getElementById('countsSub').textContent = `${data.stats.changed_lines || 0} lines modified`;
+
+      // Update Operation Stats Chips
+      const statsChips = document.getElementById('statsChips');
+      statsChips.style.display = 'flex';
+      document.getElementById('chipReplacements').innerHTML = `Swaps: <strong>${data.stats.replacements || 0}</strong>`;
+      document.getElementById('chipSplits').innerHTML = `Splits: <strong>${data.stats.splits || 0}</strong>`;
+      document.getElementById('chipMerges').innerHTML = `Merges: <strong>${data.stats.merges || 0}</strong>`;
+      document.getElementById('chipConnectors').innerHTML = `Connectors: <strong>${data.stats.connectors || 0}</strong>`;
+      document.getElementById('chipOpeners').innerHTML = `Openers: <strong>${data.stats.openers || 0}</strong>`;
+
+      // Render Diff View
+      const diffView = document.getElementById('diffView');
+      if (data.diff && data.diff.length > 0) {
+        diffView.innerHTML = data.diff.map(item => {
+          if (!item.changed) {
+            return `<div class="diff-line"><div class="diff-para">${escapeHtml(item.paraphrased)}</div></div>`;
+          }
+          return `
+            <div class="diff-line changed">
+              <div class="diff-orig">${escapeHtml(item.original)}</div>
+              <div class="diff-para">${escapeHtml(item.paraphrased)}</div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        diffView.innerHTML = `<div class="diff-line"><div class="diff-para">${escapeHtml(state.paraphrasedResult)}</div></div>`;
+      }
+
+      // Render Side-by-Side View
+      document.getElementById('sideOriginal').innerHTML = escapeHtml(originalText).replace(/\n/g, '<br><br>');
+      document.getElementById('sideParaphrased').innerHTML = escapeHtml(state.paraphrasedResult).replace(/\n/g, '<br><br>');
+
+      // Render Clean Output Area
+      document.getElementById('plainOutputArea').value = state.paraphrasedResult;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Export Actions
+    function copyResult() {
+      if (!state.paraphrasedResult) {
+        showToast('Nothing to copy yet. Run a paraphrase first.', 'error');
+        return;
+      }
+      navigator.clipboard.writeText(state.paraphrasedResult).then(() => {
+        const copyText = document.getElementById('copyText');
+        const orig = copyText.textContent;
+        copyText.textContent = 'Copied!';
+        showToast('Copied paraphrased text to clipboard!', 'success');
+        setTimeout(() => {
+          copyText.textContent = orig;
+        }, 2000);
+      });
+    }
+
+    function downloadResult() {
+      if (!state.paraphrasedResult) {
+        showToast('Nothing to download yet. Run a paraphrase first.', 'error');
+        return;
+      }
+      const filename = state.currentFilename.includes('.') 
+        ? state.currentFilename.replace(/(\.[^.]+)$/, '-paraphrased$1')
+        : `${state.currentFilename}-paraphrased.tex`;
+
+      const blob = new Blob([state.paraphrasedResult], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(`Downloaded as ${filename}`, 'success');
+    }
+  </script>
+</body>
+</html>

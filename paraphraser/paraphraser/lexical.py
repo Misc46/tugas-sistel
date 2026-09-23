@@ -5,7 +5,7 @@ import random
 import re
 
 from .ranker import Ranker
-from .synonyms import BLACKLIST, SYNONYMS
+from .synonyms import BLACKLIST, SYNONYMS, get_blacklist, get_synonyms
 
 MASK_PLACEHOLDER_RE = re.compile(r"^(\W*)(\w+)(\W*)$", re.UNICODE)
 
@@ -17,10 +17,15 @@ def replace_words(
     density: float,
     stats: dict,
     novelty: int = 3,
+    lang: str = "id",
 ) -> str:
     tokens = sentence.split(" ")
     out: list[str] = []
     replaced_here = 0
+
+    synonyms_map = get_synonyms(lang)
+    blacklist = get_blacklist(lang)
+    min_len = 4 if lang.lower() == "id" else 3
 
     for index, token in enumerate(tokens):
         if "\ue000" in token or replaced_here >= 3:
@@ -34,15 +39,15 @@ def replace_words(
         lead, core, tail = m.groups()
         key = core.lower()
         if (
-            key not in SYNONYMS
-            or key in BLACKLIST
-            or len(key) < 4
+            key not in synonyms_map
+            or key in blacklist
+            or len(key) < min_len
             or rng.random() >= density
         ):
             out.append(token)
             continue
 
-        candidates = SYNONYMS[key]
+        candidates = synonyms_map[key]
         chosen = None
 
         if ranker.available:

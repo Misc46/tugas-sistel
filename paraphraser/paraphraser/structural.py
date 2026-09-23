@@ -4,17 +4,29 @@ from __future__ import annotations
 import random
 import re
 
-SPLIT_CONJ_RE = re.compile(
+SPLIT_CONJ_RE_ID = re.compile(
     r", (sedangkan|sehingga|tetapi|tapi|namun|lalu|karena|sementara itu|padahal)\b"
 )
+SPLIT_CONJ_RE_EN = re.compile(
+    r", (while|whereas|although|though|but|because|meanwhile|since)\b", re.IGNORECASE
+)
+SPLIT_CONJ_RE = SPLIT_CONJ_RE_ID
 
-CONNECTORS = [
+CONNECTORS_ID = [
     "Selain itu, ",
     "Di samping itu, ",
     "Kemudian, ",
     "Dengan begitu, ",
     "Pada dasarnya, ",
 ]
+CONNECTORS_EN = [
+    "Furthermore, ",
+    "Moreover, ",
+    "In addition, ",
+    "Essentially, ",
+    "Consequently, ",
+]
+CONNECTORS = CONNECTORS_ID
 
 # Words that keep their capital letter even mid-sentence (acronyms / proper nouns).
 PROPER = {
@@ -31,21 +43,22 @@ def _low(s: str) -> str:
     return s[:1].lower() + s[1:] if s else s
 
 
-def _boundaries(sentence: str) -> list[tuple[int, int]]:
+def _boundaries(sentence: str, lang: str = "id") -> list[tuple[int, int]]:
     candidates: list[tuple[int, int]] = []
     for match in re.finditer(r"; ", sentence):
         candidates.append((match.start(), 2))
     for match in re.finditer(r" [\u2014\u2013] ", sentence):
         candidates.append((match.start(), 3))
-    for match in SPLIT_CONJ_RE.finditer(sentence):
+    split_re = SPLIT_CONJ_RE_EN if lang.lower() == "en" else SPLIT_CONJ_RE_ID
+    for match in split_re.finditer(sentence):
         candidates.append((match.start(), 2))
     return [c for c in candidates if c[0] >= 30]
 
 
-def _find_split(sentence: str) -> tuple[int, int] | None:
+def _find_split(sentence: str, lang: str = "id") -> tuple[int, int] | None:
     mid = len(sentence) / 2
     best: tuple[int, int] | None = None
-    for pos, length in _boundaries(sentence):
+    for pos, length in _boundaries(sentence, lang):
         if best is None or abs(pos - mid) < abs(best[0] - mid):
             best = (pos, length)
     return best
@@ -69,45 +82,67 @@ def _after_connector(sentence: str) -> str:
     return _low(first) + sep + rest
 
 
-LEAD_CONJUNCTIONS = (
+LEAD_CONJUNCTIONS_ID = (
     "dan", "atau", "serta", "tetapi", "tapi", "namun", "melainkan", "sedangkan",
     "sehingga", "lalu", "karena", "padahal", "sementara", "selain", "kemudian",
 )
+LEAD_CONJUNCTIONS_EN = (
+    "and", "or", "but", "while", "although", "though", "because", "meanwhile",
+    "furthermore", "however", "moreover", "since",
+)
+LEAD_CONJUNCTIONS = LEAD_CONJUNCTIONS_ID
 
 
-def _try_connector(sentence: str, rng: random.Random) -> str | None:
-    if any(sentence.startswith(c) for c in CONNECTORS):
+def _try_connector(sentence: str, rng: random.Random, lang: str = "id") -> str | None:
+    connectors = CONNECTORS_EN if lang.lower() == "en" else CONNECTORS_ID
+    leads = LEAD_CONJUNCTIONS_EN if lang.lower() == "en" else LEAD_CONJUNCTIONS_ID
+    if any(sentence.startswith(c) for c in connectors):
         return None
     first = sentence.split(" ", 1)[0].strip(".,;:()!?").lower()
-    if first in LEAD_CONJUNCTIONS:
+    if first in leads:
         return None
-    return rng.choice(CONNECTORS) + _after_connector(sentence)
+    return rng.choice(connectors) + _after_connector(sentence)
 
 
-def _try_opener(sentence: str) -> str | None:
-    swaps = (
-        ("Layer ini ", "Lapisan ini "),
-        ("Di layer ini ", "Pada layer ini "),
-        ("Pada TCP/IP, ", "Dalam TCP/IP, "),
-        ("Video ini ", "Video tersebut "),
-        ("Dari materi ini ", "Dari materi tersebut "),
-        ("Hal penting lain ", "Hal penting lainnya "),
-    )
+OPENER_SWAPS_ID = (
+    ("Layer ini ", "Lapisan ini "),
+    ("Di layer ini ", "Pada layer ini "),
+    ("Pada TCP/IP, ", "Dalam TCP/IP, "),
+    ("Video ini ", "Video tersebut "),
+    ("Dari materi ini ", "Dari materi tersebut "),
+    ("Hal penting lain ", "Hal penting lainnya "),
+)
+OPENER_SWAPS_EN = (
+    ("This paper ", "The present study "),
+    ("In this section, ", "Here, "),
+    ("In this paper, ", "Herein, "),
+    ("For example, ", "For instance, "),
+    ("In other words, ", "Namely, "),
+)
+
+
+def _try_opener(sentence: str, lang: str = "id") -> str | None:
+    swaps = OPENER_SWAPS_EN if lang.lower() == "en" else OPENER_SWAPS_ID
     for old, new in swaps:
         if sentence.startswith(old):
             return new + sentence[len(old):]
     return None
 
 
-MERGE_JOINERS = (", sementara itu ", ", sedangkan ", ", sekaligus ", ", dan ", ", sehingga ")
-FINAL_JOINERS = (", serta ", ", dan juga ", ", maupun ")
+MERGE_JOINERS_ID = (", sementara itu ", ", sedangkan ", ", sekaligus ", ", dan ", ", sehingga ")
+MERGE_JOINERS_EN = (", meanwhile ", ", while ", ", whereas ", ", and ", ", thus ")
+MERGE_JOINERS = MERGE_JOINERS_ID
+
+FINAL_JOINERS_ID = (", serta ", ", dan juga ", ", maupun ")
+FINAL_JOINERS_EN = (", as well as ", ", along with ", ", and also ")
+FINAL_JOINERS = FINAL_JOINERS_ID
 
 
 def _word_count(sentence: str) -> int:
     return len(re.findall(r"[^\W\d_]+", sentence, re.UNICODE))
 
 
-def _try_merge(first: str, second: str, rng: random.Random) -> str | None:
+def _try_merge(first: str, second: str, rng: random.Random, lang: str = "id") -> str | None:
     if _word_count(first) > 14 or _word_count(second) > 14:
         return None
     if "\ue000" in first or "\ue000" in second:
@@ -118,14 +153,17 @@ def _try_merge(first: str, second: str, rng: random.Random) -> str | None:
     tail = second.strip()
     if tail.endswith((".", "!", "?")):
         tail = tail[:-1]
-    return head + rng.choice(MERGE_JOINERS) + _after_connector(tail)
+    joiners = MERGE_JOINERS_EN if lang.lower() == "en" else MERGE_JOINERS_ID
+    return head + rng.choice(joiners) + _after_connector(tail)
 
 
-def _detune_enumeration(sentence: str, rng: random.Random) -> str | None:
-    idx = sentence.rfind(", dan ")
+def _detune_enumeration(sentence: str, rng: random.Random, lang: str = "id") -> str | None:
+    match_str = ", and " if lang.lower() == "en" else ", dan "
+    joiners = FINAL_JOINERS_EN if lang.lower() == "en" else FINAL_JOINERS_ID
+    idx = sentence.rfind(match_str)
     if idx == -1 or sentence[:idx].count(",") < 2:
         return None
-    return sentence[:idx] + rng.choice(FINAL_JOINERS) + sentence[idx + len(", dan "):]
+    return sentence[:idx] + rng.choice(joiners) + sentence[idx + len(match_str):]
 
 
 def _cv(sentences: list[str]) -> float:
@@ -140,7 +178,12 @@ def _cv(sentences: list[str]) -> float:
 
 
 def _improve_burstiness(
-    sentences: list[str], rng: random.Random, stats: dict, target: float = 0.6, rounds: int = 14
+    sentences: list[str],
+    rng: random.Random,
+    stats: dict,
+    target: float = 0.6,
+    rounds: int = 14,
+    lang: str = "id",
 ) -> list[str]:
     sents = list(sentences)
     for _ in range(rounds):
@@ -154,7 +197,7 @@ def _improve_burstiness(
         moved = False
         long_index = max(range(len(sents)), key=lambda i: lens[i])
         best_split = None
-        for pos, length in _boundaries(sents[long_index]):
+        for pos, length in _boundaries(sents[long_index], lang):
             candidate = (sents[:long_index]
                          + _split_at(sents[long_index], pos, length)
                          + sents[long_index + 1:])
@@ -169,7 +212,7 @@ def _improve_burstiness(
         if not moved:
             short_index = min(range(len(sents) - 1), key=lambda i: lens[i] + lens[i + 1])
             if lens[short_index] <= 22 and lens[short_index + 1] <= 22:
-                merged = _try_merge(sents[short_index], sents[short_index + 1], rng)
+                merged = _try_merge(sents[short_index], sents[short_index + 1], rng, lang)
                 if merged is not None:
                     candidate = sents[:short_index] + [merged] + sents[short_index + 2:]
                     if _cv(candidate) > current:
@@ -183,12 +226,12 @@ def _improve_burstiness(
 
 
 def structural_pass(
-    sentences: list[str], rng: random.Random, stats: dict
+    sentences: list[str], rng: random.Random, stats: dict, lang: str = "id"
 ) -> list[str]:
     stage: list[str] = []
     for sentence in sentences:
         if len(sentence) > 90 and rng.random() < 0.8:
-            boundary = _find_split(sentence)
+            boundary = _find_split(sentence, lang)
             if boundary is not None:
                 stage.extend(_split_at(sentence, *boundary))
                 stats["splits"] += 1
@@ -199,7 +242,7 @@ def structural_pass(
     i = 0
     while i < len(stage):
         if i + 1 < len(stage) and rng.random() < 0.55:
-            merged = _try_merge(stage[i], stage[i + 1], rng)
+            merged = _try_merge(stage[i], stage[i + 1], rng, lang)
             if merged is not None:
                 merged_out.append(merged)
                 stats["merges"] += 1
@@ -210,7 +253,7 @@ def structural_pass(
 
     out: list[str] = []
     for sentence in merged_out:
-        detuned = _detune_enumeration(sentence, rng)
+        detuned = _detune_enumeration(sentence, rng, lang)
         if detuned is not None and rng.random() < 0.5:
             sentence = detuned
             stats["enumerations"] += 1
@@ -220,14 +263,14 @@ def structural_pass(
             continue
 
         if out and rng.random() < 0.25:
-            joined = _try_connector(sentence, rng)
+            joined = _try_connector(sentence, rng, lang)
             if joined is not None:
                 out.append(joined)
                 stats["connectors"] += 1
                 continue
 
         if rng.random() < 0.3:
-            opened = _try_opener(sentence)
+            opened = _try_opener(sentence, lang)
             if opened is not None:
                 out.append(opened)
                 stats["openers"] += 1
@@ -235,4 +278,5 @@ def structural_pass(
 
         out.append(sentence)
 
-    return _improve_burstiness(out, rng, stats)
+    return _improve_burstiness(out, rng, stats, lang=lang)
+

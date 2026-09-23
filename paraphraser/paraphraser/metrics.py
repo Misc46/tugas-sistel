@@ -6,9 +6,6 @@ import re
 import sys
 from pathlib import Path
 
-import torch
-from transformers import AutoModelForMaskedLM, AutoTokenizer
-
 from .tex import is_prose_line
 
 MODEL = "xlm-roberta-base"
@@ -51,12 +48,40 @@ def words(s):
 def burstiness(sents):
     lens = [words(s) for s in sents]
     n = len(lens)
+    if n == 0:
+        return 0.0, 0.0, 0.0, []
     mean = sum(lens) / n
     var = sum((x - mean) ** 2 for x in lens) / n
-    return mean, math.sqrt(var), math.sqrt(var) / mean, lens
+    cv = (math.sqrt(var) / mean) if mean > 0 else 0.0
+    return mean, math.sqrt(var), cv, lens
+
+
+def compute_text_metrics(text: str) -> dict:
+    """Compute burstiness (CV), mean sentence length, and counts for a string."""
+    paras = [line for line in text.split("\n") if line.strip()]
+    sents = to_sentences(paras)
+    if not sents:
+        return {
+            "burstiness": 0.0,
+            "mean_length": 0.0,
+            "std_dev": 0.0,
+            "sentences": 0,
+            "words": 0,
+        }
+    mean, std_dev, cv, lens = burstiness(sents)
+    return {
+        "burstiness": round(cv, 4),
+        "mean_length": round(mean, 2),
+        "std_dev": round(std_dev, 2),
+        "sentences": len(sents),
+        "words": sum(lens),
+    }
+
 
 
 def pseudo_ppl(tok, mdl, sents, max_tokens, chunk=16, per_sentence=64):
+    import torch
+
     rng = random.Random(0)
     total = 0.0
     count = 0
@@ -114,6 +139,7 @@ def main() -> int:
         ("ORIGINAL", args.original),
         ("REVISED", args.revised),
     ]
+    from transformers import AutoModelForMaskedLM, AutoTokenizer
     tok = AutoTokenizer.from_pretrained(MODEL)
     mdl = AutoModelForMaskedLM.from_pretrained(MODEL)
     mdl.eval()
